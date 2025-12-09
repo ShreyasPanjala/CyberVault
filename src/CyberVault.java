@@ -8,12 +8,12 @@ public class CyberVault {
         Scanner sc = new Scanner(System.in);
         PasswordManager pm = new PasswordManager();
 
-        // ---------- Predefined users & admin (customize here) ----------
-        String[] users = { "Alice", "Bob" };          // two users
-        String[] userPasswords = { "a111", "b222" };  // their passwords
+        // ---------- Predefined users & admin----------
+        String[] users = { "Samrat", "Sujit" };          // two users
+        String[] userPasswords = { "1234", "5678" };  // their passwords
 
-        String adminUser = "superadmin";   // admin username
-        String adminPass = "adm123";       // admin password
+        String adminUser = "sr_230607";   // admin username
+        String adminPass = "admin@1234";       // admin password
         // ----------------------------------------------------------------
 
         // Load persistent data (if any) - handle exceptions inside manager
@@ -162,7 +162,7 @@ public class CyberVault {
                     break;
 
                 case 5:
-                    System.out.println("Saving data and exiting. Bye!");
+                    System.out.println("Saving data and exiting. Goodbye!");
                     pm.saveToFile(); // final save
                     break mainLoop;
 
@@ -170,5 +170,7 @@ public class CyberVault {
                     System.out.println("Invalid choice. Choose between 1 and 5.");
             }
         }
+
+        // sc.close(); // not strictly required, program exiting
     }
 }
