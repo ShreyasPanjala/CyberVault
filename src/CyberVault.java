@@ -1,3 +1,4 @@
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class CyberVault {
@@ -7,24 +8,32 @@ public class CyberVault {
         Scanner sc = new Scanner(System.in);
         PasswordManager pm = new PasswordManager();
 
-        // --------- Predefined users & admin ----------
-        String[] users = { "Samrat", "Shreyas" };          // two users
+        // ---------- Predefined users & admin----------
+        String[] users = { "Samrat", "Sujit" };          // two users
         String[] userPasswords = { "1234", "5678" };  // their passwords
 
         String adminUser = "sr_230607";   // admin username
         String adminPass = "admin@1234";       // admin password
         // ----------------------------------------------------------------
 
+        // Load persistent data (if any) - handle exceptions inside manager
+        pm.loadFromFile();
+
         System.out.println("=== Welcome to CyberVault ===");
         System.out.println("Login type:");
         System.out.println("1. Admin");
         System.out.println("2. User");
         System.out.print("Choose (1 or 2): ");
-        int loginType = sc.nextInt();
-        sc.nextLine(); // consume newline
+
+        int loginType = 2; // default to user
+        try {
+            loginType = Integer.parseInt(sc.nextLine().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Defaulting to User mode.");
+        }
 
         boolean isAdmin = false;
-        String currentUser = ""; // holds logged in username for user mode
+        String currentUser = "guest";
 
         if (loginType == 1) {
             // Admin login
@@ -38,7 +47,7 @@ public class CyberVault {
                 currentUser = adminUser;
                 System.out.println("Admin login successful.");
             } else {
-                System.out.println("Admin login failed. Starting as Guest user (no access to admin features).");
+                System.out.println("Admin login failed. Starting as Guest user.");
                 isAdmin = false;
                 currentUser = "guest";
             }
@@ -59,7 +68,7 @@ public class CyberVault {
                 }
             }
             if (!found) {
-                System.out.println("User login failed. Starting as Guest (cannot view/decrypt any user entries).");
+                System.out.println("User login failed. Starting as Guest (limited access).");
                 currentUser = "guest";
             } else {
                 System.out.println("User login successful. Welcome, " + currentUser);
@@ -67,6 +76,7 @@ public class CyberVault {
         }
 
         // ---------- Main menu ----------
+        mainLoop:
         while (true) {
             System.out.println("\n=== CyberVault Menu ===");
             System.out.println("1. Add Password");
@@ -76,36 +86,50 @@ public class CyberVault {
             System.out.println("5. Exit");
             System.out.print("Enter your choice: ");
 
-            int choice = sc.nextInt();
-            sc.nextLine(); // consume newline
+            int choice = -1;
+            try {
+                choice = Integer.parseInt(sc.nextLine().trim());
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number between 1 and 5.");
+                continue;
+            }
 
             switch (choice) {
 
                 case 1:
-                    // Add password: owner = currentUser (if admin, ask for owner)
-                    System.out.print("Enter account name: ");
-                    String account = sc.nextLine();
+                    try {
+                        System.out.print("Enter account name: ");
+                        String account = sc.nextLine();
 
-                    System.out.print("Enter username for the account: ");
-                    String accUser = sc.nextLine();
+                        System.out.print("Enter username for the account: ");
+                        String accUser = sc.nextLine();
 
-                    System.out.print("Enter password for the account: ");
-                    String accPass = sc.nextLine();
+                        System.out.print("Enter password for the account: ");
+                        String accPass = sc.nextLine();
 
-                    String ownerForEntry = currentUser;
-                    if (isAdmin) {
-                        // Admin can add entries for any owner
-                        System.out.print("Enter owner for this entry (username): ");
-                        String ownerInput = sc.nextLine();
-                        // if ownerInput matches a real user or 'admin', accept; otherwise still accept (flexible)
-                        ownerForEntry = ownerInput;
+                        String ownerForEntry = currentUser;
+                        if (isAdmin) {
+                            System.out.print("Enter owner for this entry (username): ");
+                            String ownerInput = sc.nextLine();
+                            // allow admin to assign owner; basic validation:
+                            if (ownerInput == null || ownerInput.trim().isEmpty())
+                                ownerForEntry = currentUser;
+                            else
+                                ownerForEntry = ownerInput;
+                        }
+                        pm.addPassword(account, accUser, accPass, ownerForEntry);
+
+                        // Save after add
+                        pm.saveToFile();
+                    } catch (IllegalArgumentException iae) {
+                        System.out.println("Input error: " + iae.getMessage());
+                    } catch (Exception ex) {
+                        System.out.println("Unexpected error when adding: " + ex.getMessage());
                     }
-
-                    pm.addPassword(account, accUser, accPass, ownerForEntry);
                     break;
 
                 case 2:
-                    // View passwords: admin sees all, user sees only own
+                    // View passwords
                     pm.viewAll(isAdmin, currentUser);
                     break;
 
@@ -133,15 +157,17 @@ public class CyberVault {
                     System.out.print("Enter account name to delete: ");
                     String delAcc = sc.nextLine();
                     pm.delete(delAcc, isAdmin, currentUser);
+                    // Save after delete
+                    pm.saveToFile();
                     break;
 
                 case 5:
-                    System.out.println("Exiting. Goodbye!");
-                    sc.close();
-                    return;
+                    System.out.println("Saving data and exiting. Goodbye!");
+                    pm.saveToFile(); // final save
+                    break mainLoop;
 
                 default:
-                    System.out.println("Invalid choice. Try again.");
+                    System.out.println("Invalid choice. Choose between 1 and 5.");
             }
         }
     }
