@@ -37,13 +37,7 @@ Audit stored password entries
 
 Perform maintenance operations
 
-📂 Project Structure
-CyberVault/
-│
-├── CyberVault.java        # Main driver program (user login + UI flow)
-├── PasswordManager.java   # Handles encryption, storage, and management
-├── PasswordEntry.java     # Data model for password records
-└── README.md              # Documentation
+
 
 🧠 How It Works
 
